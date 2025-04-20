@@ -7,6 +7,6 @@ ssh.exeをデスクトップに配置して、管理者権限で実行する。
 
 Desktopにkey.csvを作成
 
-プロジェクト名 ユーザー名 IP keyのpathを入れる
+プロジェクト名 ユーザー名 IP PassWord  keyのpathを入れる
 
 keyはDocumentsディレクトリに入れておく。
