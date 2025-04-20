@@ -14,10 +14,11 @@ import (
 
 
 type ServerInfo struct {
-	HostName string
+	HostName  string
 	User      string
 	IP        string
-	Path	 string
+	Password  string
+	Path	  string
 }
 
 
@@ -38,7 +39,7 @@ func main() {
 
 	fmt.Println("=== サーバーリスト ===")
 	for i, server := range servers {
-		fmt.Printf("[%d] %s (%s@%s)\n", i+1, server.HostName, server.User, server.IP, server.Path)
+		fmt.Printf("[%d] %s (%s@%s) %p \n", i+1, server.HostName, server.User, server.IP, server.Password)
 	}
 
 	selectedIndex := getSelectedServerIndex(len(servers))
@@ -78,10 +79,11 @@ func readServerData(filePath string) ([]ServerInfo, error) {
 			HostName: strings.TrimSpace(row[0]),
 			User:     strings.TrimSpace(row[1]),
 			IP:       strings.TrimSpace(row[2]),
-			Path:     strings.TrimSpace(row[3]),
+			Password: strings.TrimSpace(row[3]),
+			Path:     strings.TrimSpace(row[4]),
 		}
 		
-		if server.HostName != "" && server.User != "" && server.IP != "" && server.Path != "" {
+		if server.HostName != "" && server.User != "" && server.IP != ""  {
 			servers = append(servers, server)
 		}
 	}
@@ -113,22 +115,35 @@ func getSelectedServerIndex(maxIndex int) int {
 
 // SSHで接続する
 func connectSSH(server ServerInfo) {
+	var cmdArgs []string
+	
 	// 鍵のパスを確認
-	keyPath := server.Path
-	if !filepath.IsAbs(keyPath) {
-		// 相対パスの場合、ユーザーのホームディレクトリからの相対パスとして扱う
-		keyPath = filepath.Join(os.Getenv("USERPROFILE"), keyPath)
+	if server.Path != "" {
+		keyPath := server.Path
+		if !filepath.IsAbs(keyPath) {
+			// 相対パスの場合、ユーザーのホームディレクトリからの相対パスとして扱う
+			keyPath = filepath.Join(os.Getenv("USERPROFILE"), keyPath)
+		}
+
+		cmdArgs = []string{
+			"-i", keyPath,
+			fmt.Sprintf("%s@%s", server.User, server.IP),
+		}
+	}else{
+		cmdArgs = []string{
+			fmt.Sprintf("%s@%s", server.User, server.IP),
+		}
 	}
 	
 	// コマンドを構築
-	cmdArgs := []string{
-		"-i", keyPath,
-		fmt.Sprintf("%s@%s", server.User, server.IP),
-	}
 	
 	fmt.Println(cmdArgs)
 	fmt.Printf("接続中: %s (%s@%s)...\n\n", server.HostName, server.User, server.IP)
-	
+
+	if server.Path == "" {
+		fmt.Println("パスワード認証を使用します。プロンプトが表示されたらパスワードを入力してください。")
+	}
+ 	
 	// SSHコマンドを実行
 	cmd := exec.Command("C:\\Windows\\System32\\OpenSSH\\ssh.exe", cmdArgs...)
 	cmd.Stdout = os.Stdout
